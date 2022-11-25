@@ -1,0 +1,90 @@
+#!/bin/bash
+action=$1
+target=$2
+args=$@
+
+base_dir=${base_dir:-/opt/aalab}
+COMPOSE_FILES=$(cat ${base_dir}/compose_files 2>/dev/null || echo "")
+
+function usage() {
+   echo "app控制脚本"
+   echo
+   echo "Usage: "
+   echo "  ./abctl.sh [COMMAND] [ARGS...]"
+   echo "  ./abctl.sh --help"
+   echo
+   echo "Commands: "
+   echo "  status    查看 服务运行状态"
+   echo "  start     启动 服务"
+   echo "  stop      停止 服务"
+   echo "  restart   重启 服务"
+   echo "  upgrade   升级 至最新版本"
+}
+
+
+function status() {
+   echo
+   cd ${base_dir}
+   docker-compose ${COMPOSE_FILES} ps
+}
+
+function start() {
+   echo
+   cd ${base_dir}
+   docker-compose ${COMPOSE_FILES} start ${target}
+}
+
+function stop() {
+   echo
+   cd ${base_dir}
+   docker-compose ${COMPOSE_FILES} stop ${target}
+}
+
+function restart() {
+   echo
+   cd ${base_dir}
+   docker-compose ${COMPOSE_FILES} restart ${target}
+}
+
+function upgrade() {
+   echo
+   cd ${base_dir}
+   docker-compose ${COMPOSE_FILES} pull ${target}
+   docker-compose ${COMPOSE_FILES} up -d --force-recreate --build ${target}
+   docker image prune -f
+}
+
+function main() {
+   case "${action}" in
+   status)
+      status
+      ;;
+   start)
+      start
+      ;;
+   stop)
+      stop
+      ;;
+   restart)
+      restart
+      ;;
+   upgrade)
+      upgrade
+      ;;
+   help)
+      usage
+      ;;
+   --help)
+      usage
+      ;;
+   generate_compose_files)
+      generate_compose_files
+      ;;
+   *)
+      echo
+      cd ${base_dir}
+      docker-compose ${COMPOSE_FILES} $@
+      ;;
+   esac
+}
+main $@
